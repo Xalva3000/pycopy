@@ -15,6 +15,8 @@ def main():
         destination = param["DESTINATION_FOLDER"]
         schedule = param["SCHEDULE"]
         save_origin = param["SAVE_ORIGIN"]
+        obsolescence_period = param["OBSOLESCENCE_PERIOD"]
+        date_format = param["DATE_FORMAT"]
 
         if "monthly" in schedule:
             if (date.today().day in range(1, 6) or (
@@ -24,16 +26,21 @@ def main():
                 copy_backup = CopyBackup(
                     source,
                     destination,
-                    mode="monthly",
+                    schedule="monthly",
+                    date_format=date_format,
                 )
                 copy_backup.copy_obj_all()
+
+                if save_origin == "NO" and copy_backup.files and copy_backup.check_size():
+                    copy_backup.delete_origin()
 
         if "weekly" in schedule:
             # Недельный бэкап
             copy_backup = CopyBackup(
                 source,
                 destination,
-                mode="weekly",
+                schedule="weekly",
+                date_format=date_format,
             )
             copy_backup.copy_obj_all()
 
@@ -45,7 +52,8 @@ def main():
             copy_backup = CopyBackup(
                 source,
                 destination,
-                mode="daily",
+                schedule="daily",
+                date_format=date_format,
             )
             # копирование всего содержащегося в исходной папке,
             # чего нет в папке назначении
@@ -56,12 +64,12 @@ def main():
             if copy_backup.check_size():
                 # настройка удаления
                 deleter_in = ObsolescenceDeleter(
-                    source,
-                    obsolescence_period=7
+                    folder_path=copy_backup.source,
+                    obsolescence_period=obsolescence_period
                 )
                 deleter_out = ObsolescenceDeleter(
-                    destination,
-                    obsolescence_period=7
+                    folder_path=copy_backup.destination,
+                    obsolescence_period=obsolescence_period
                 )
 
                 # поиск и удаление устаревших файлов

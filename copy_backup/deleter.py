@@ -17,7 +17,7 @@ class ObsolescenceDeleter:
             date_format: str = "%Y%m%d"):
 
         self.path = folder_path
-        self.brink_date = self._get_brink_date(obsolescence_period)
+        self.brink_date = self._get_brink_date(int(obsolescence_period))
         self.date_format = date_format
 
 

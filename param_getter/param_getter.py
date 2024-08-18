@@ -24,7 +24,9 @@ class ParamScheme(Validations):
     DESTINATION_FOLDER: str
     SCHEDULE: str
     SAVE_ORIGIN: str
-    OBSOLESCENCE_PERIOD: int
+    OBSOLESCENCE_PERIOD: str
+    DATE_FORMAT: str
+
 
     @staticmethod
     def validate_SOURCE_FOLDER(value, **_):
@@ -40,12 +42,16 @@ class ParamScheme(Validations):
         except Exception as e:
             logger.error("Неверный путь к папке назначения.", exc_info=True)
 
-    # @staticmethod
-    # def validate_SCHEDULE(value, **_):
-    #     try:
-    #         assert value in ['daily', 'w/m'], "Неизвестное расписание."
-    #     except Exception as e:
-    #         logger.error("Неизвестное расписание.", exc_info=True)
+    @staticmethod
+    def validate_SCHEDULE(value, **_):
+        try:
+            count = 0
+            for s in ["daily", "weekly", "monthly"]:
+                if s in value:
+                    count += 1
+            assert count > 0, "Неизвестное расписание."
+        except Exception as e:
+            logger.error("Неизвестное расписание.", exc_info=True)
 
     @staticmethod
     def validate_SAVE_ORIGIN(value, **_):
@@ -61,22 +67,24 @@ class ParamScheme(Validations):
         except Exception as e:
             logger.error("Период устаревания должен быть числом.", exc_info=True)
 
+    @staticmethod
+    def validate_DATE_FORMAT(value, **_):
+        try:
+            assert value in ["YYYYMMDD", "YYYY_MM_DD", "DD_MM_YYYY"], "Неверный путь к исходной папке, или она пуста."
+        except Exception as e:
+            logger.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+
 
 class ParamGetter:
     def __init__(self, env_variables: OrderedDict[str, str]):
         self.vars = env_variables
-
-    def check_raw(self):
-        if len(self.vars) % 5 == 0:
-            return True
-        return
 
     @staticmethod
     def check_groups(dct):
         """Проверка одной группы параметров"""
         flag = True
         ParamScheme(**dct)
-        if len(dct) != 5:
+        if len(dct) != 6:
             flag = False
 
         for k, v in dct.items():

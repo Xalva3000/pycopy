@@ -23,19 +23,24 @@ class CopyBackup:
             source_folder: str,
             destination_folder: str,
             schedule: str,
+            date_format="YYYYMMDD",
     ):
         self.schedule = schedule
         self.source = source_folder
         if self.schedule == "daily":
             self.destination = destination_folder + "daily\\"
+            os.makedirs(self.destination, exist_ok=True)
+            self.files = Searcher(source_folder, destination_folder, date_format).get_actual_difference()
         elif self.schedule == "weekly":
             self.destination = destination_folder + "weekly\\"
             os.makedirs(self.destination, exist_ok=True)
+            self.files = Searcher(source_folder, destination_folder, date_format).get_latest_difference()
         elif self.schedule == "monthly":
             self.destination = destination_folder + "monthly\\" + date.today().strftime("%m") + "\\"
             os.makedirs(self.destination, exist_ok=True)
+            self.files = Searcher(source_folder, destination_folder, date_format).get_latest_difference()
 
-        self.files = Searcher(source_folder, destination_folder).get_difference()
+
 
 
 
