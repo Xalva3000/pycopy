@@ -1,0 +1,3 @@
+__all__ = ("NEW_ENV_FILE", "LEXICON_RU")
+
+from .LEXICON_RU import NEW_ENV_FILE, LEXICON_RU
