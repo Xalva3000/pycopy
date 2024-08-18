@@ -4,7 +4,7 @@ from datetime import date
 
 dotenv.load_dotenv()
 
-# Создание и заполнение тестовых фалов c датами (для ручного тестирования)
+# Создание и заполнение тестовых файлов c датами (для ручного тестирования)
 def make_fake_files():
 
     for k, v in dotenv.dotenv_values().items():

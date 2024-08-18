@@ -1,4 +1,4 @@
-import logging
+
 import os
 import re
 from dataclasses import dataclass
@@ -31,16 +31,18 @@ class ParamScheme(Validations):
     @staticmethod
     def validate_SOURCE_FOLDER(value, **_):
         try:
-            assert len(os.listdir(value)) > 0,"Неверный путь к исходной папке, или она пуста."
-        except Exception as e:
+            assert len(os.listdir(value)) > 0, "Неверный путь к исходной папке, или она пуста."
+        except AssertionError as e:
             logger.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+            raise ValueError
 
     @staticmethod
     def validate_DESTINATION_FOLDER(value, **_):
         try:
             assert len(os.listdir(value)) >= 0, "Неверный путь к папке назначения."
-        except Exception as e:
+        except AssertionError as e:
             logger.error("Неверный путь к папке назначения.", exc_info=True)
+            raise ValueError
 
     @staticmethod
     def validate_SCHEDULE(value, **_):
@@ -50,29 +52,33 @@ class ParamScheme(Validations):
                 if s in value:
                     count += 1
             assert count > 0, "Неизвестное расписание."
-        except Exception as e:
+        except AssertionError as e:
             logger.error("Неизвестное расписание.", exc_info=True)
+            raise ValueError
 
     @staticmethod
     def validate_SAVE_ORIGIN(value, **_):
         try:
             assert value in ['YES', 'NO'], "Не указано сохранять ли оригинал."
-        except Exception as e:
+        except AssertionError as e:
             logger.error("Не указано сохранять ли оригинал.", exc_info=True)
+            raise ValueError
 
     @staticmethod
     def validate_OBSOLESCENCE_PERIOD(value, **_):
         try:
             assert value.isdigit(), "Период устаревания должен быть числом."
-        except Exception as e:
+        except AssertionError as e:
             logger.error("Период устаревания должен быть числом.", exc_info=True)
+            raise ValueError
 
     @staticmethod
     def validate_DATE_FORMAT(value, **_):
         try:
             assert value in ["YYYYMMDD", "YYYY_MM_DD", "DD_MM_YYYY"], "Неверный путь к исходной папке, или она пуста."
-        except Exception as e:
+        except AssertionError as e:
             logger.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+            raise ValueError
 
 
 class ParamGetter:

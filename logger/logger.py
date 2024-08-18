@@ -7,7 +7,7 @@ if "logs" not in os.listdir("."):
     os.mkdir("logs")
 
 # Инициализация логера
-main_logger = logging.getLogger("main_logger")
+main_logger = logging.getLogger(__name__)
 
 
 # Создание формата логов
@@ -32,5 +32,5 @@ main_logger.addHandler(file_handler)
 # stream_handler.setFormatter(log_format)
 # main_logger.addHandler(stream_handler)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format=log_format)
 # print(main_logger.handlers)

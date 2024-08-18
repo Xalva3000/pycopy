@@ -11,6 +11,8 @@ from decors import log_start_finish, timer
 logger = logging.getLogger(__name__)
 
 
+
+
 class CopyBackup:
     """Объект содержащий методы копирования файлов
     и проверки результатов копирования.
