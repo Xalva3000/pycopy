@@ -13,11 +13,25 @@ if "logs" not in os.listdir("."):
     os.mkdir("logs")
 
 # Инициализация логера
+root_logger = logging.getLogger()
+# root_logger.propagate = False
+
 main_logger = logging.getLogger("main")
+main_logger.setLevel(logging.INFO)
+main_logger.propagate = False
+
+logger_duplicate = logging.getLogger("duplicate_logger")
+logger_duplicate.setLevel(logging.INFO)
+logger_duplicate.propagate = False
 
 # Создание формата логов
 log_format = "[%(asctime)s.%(msecs)03d] %(levelname)6s:  %(message)s"
 log_date_format = "%Y-%m-%d %H:%M:%S"
+
+logging.basicConfig(
+    format=log_format,
+    datefmt=log_date_format,
+)
 
 # Получение нужного формата сегодняшней даты
 d_today = date.today().strftime("%Y%m%d")
@@ -26,16 +40,12 @@ d_today = date.today().strftime("%Y%m%d")
 stream_handler = logging.StreamHandler()
 main_logger.addHandler(stream_handler)
 
+
 # Создание и настройка основного FileHandler для записи логов в файл
 file_handler = logging.FileHandler(f"logs\\{d_today}_pycopy_logs.txt", encoding="utf-8")
 main_logger.addHandler(file_handler)
 
-logging.basicConfig(
-    format=log_format,
-    datefmt=log_date_format,
-    level=logging.DEBUG,
-    handlers=[file_handler, stream_handler],
-)
+
 
 
 @log_start_finish
@@ -51,13 +61,13 @@ def main():
         date_format = param["DATE_FORMAT"]
         monthly_schedule_done = False
 
-        # logger_duplicate = logging.getLogger("duplicate_logger")
+
         file_handler_duplicate = logging.FileHandler(
             destination + f"{d_today}_pycopy_logs.txt",
             mode="a",
             encoding="utf-8",
         )
-        main_logger.addHandler(file_handler_duplicate)
+        logger_duplicate.addHandler(file_handler_duplicate)
 
         if "monthly" in schedule:
             if date.today().day in range(1, 6) or (
@@ -122,16 +132,20 @@ def main():
                 deleter_in.delete_outdated()
                 deleter_out.delete_outdated()
 
-        main_logger.removeHandler(file_handler_duplicate)
+        logger_duplicate.removeHandler(file_handler_duplicate)
 
 
 # Запуск основной функции
 if __name__ == "__main__":
 
     main()
+    try:
 
-    # сообщение в терминал о завершении
-    print("Программа завершила работу. Ожидание 10с. Ctrl+С - выход.")
-    # визуальное оформление ожидания
-    for i in tqdm(range(10)):
+        # сообщение в терминал о завершении
+        print("Программа завершила работу. Ожидание 10с. Ctrl+С - выход.")
+        # визуальное оформление ожидания
+        for i in tqdm(range(10)):
+            sleep(1)
+    except KeyboardInterrupt:
+        print("Пока!")
         sleep(1)

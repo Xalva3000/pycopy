@@ -5,7 +5,7 @@ from decors import log_start_finish, timer
 import re
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("main")
 
 
 class ObsolescenceDeleter:

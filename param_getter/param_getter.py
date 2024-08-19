@@ -7,7 +7,7 @@ from decors import log_finish, log_start_finish
 import logging
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("root")
 
 
 class Validations:
