@@ -96,6 +96,7 @@ class CopyBackup:
         return True
 
     @timer
+    @log_start_finish
     def delete_origin(self):
         """Удаление оригинала"""
         for file in self.files:

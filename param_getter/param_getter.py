@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass
 from typing import OrderedDict
-from decors import log_finish
+from decors import log_finish, log_start_finish
 import logging
 
 
@@ -102,7 +102,7 @@ class ParamGetter:
 
         raise NameError("Переменные env некорректны.")
 
-    @log_finish
+    @log_start_finish
     def get_param_groups(self):
         """Прием групп параметров из файла env"""
         regex = r"^(.+)_(\d+)$"

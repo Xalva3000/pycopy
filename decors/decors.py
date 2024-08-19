@@ -8,7 +8,7 @@ def timer(func):
     """Декоратор замера времени работы функции"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("main")
         func_doc = func.__doc__
         start = perf_counter()
         result = func(*args, **kwargs)
@@ -22,7 +22,7 @@ def log_start_finish(func):
     """Декоратор логирования сообщает о запуске и завершении работы функции"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("main")
         func_doc = func.__doc__
         logger.info(f"Задача '{func_doc}' запускается. Параметры {args}")
         result = func(*args, **kwargs)
@@ -35,7 +35,7 @@ def log_finish(func):
     """Декоратор логирования сообщает о завершении функции"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("main")
         func_doc = func.__doc__
         result = func(*args, **kwargs)
         logger.info(f"Успешно: '{func_doc}'. Параметры: {args}")
@@ -47,9 +47,9 @@ def log_start(func):
     """Декоратор логирования сообщает о запуске функции"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger("main")
         func_doc = func.__doc__
-        logger.info(f"Успешно: '{func_doc}'. Параметры: {args}")
+        logger.info(f"Запуск: '{func_doc}'. Параметры: {args}")
         result = func(*args, **kwargs)
         return result
     return wrapper
