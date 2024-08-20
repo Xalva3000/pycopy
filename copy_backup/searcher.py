@@ -18,7 +18,7 @@ class Searcher:
                     lambda name: os.path.isfile(
                         os.path.join(destination_path, name)),
                         os.listdir(destination_path)))
-        elif mode == "FOLDERS":
+        elif mode == "TREE":
             self.source = list(
                 filter(
                     lambda name: os.path.isdir(

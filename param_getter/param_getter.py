@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass
 from typing import OrderedDict
-from decors import log_finish, log_start_finish, log_start
+from decors import log_start
 import logging
 
 
@@ -24,7 +24,7 @@ class Validations:
 class ParamScheme(Validations):
     SOURCE_FOLDER: str
     DESTINATION_FOLDER: str
-    COPY_FILES_OR_FOLDERS: str # FILES, FOLDERS
+    COPY_FILES_OR_TREE: str # FILES, TREE
     SCHEDULE: str # daily,weekly,monthly
     SAVE_ORIGIN: str # YES,NO
     OBSOLESCENCE_PERIOD: str # NUMBER
@@ -50,12 +50,12 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_COPY_FILES_OR_FOLDERS(value, **_):
+    def validate_COPY_FILES_OR_TREE(value, **_):
         try:
-            assert value in ['FILES', 'FOLDERS'], "COPY_FILES_OR_FOLDERS должно иметь значение FILES или FOLDERS."
+            assert value in ['FILES', 'TREE'], "COPY_FILES_OR_TREE должно иметь значение FILES или TREE."
         except AssertionError as e:
-            logger1.error("COPY_FILES_OR_FOLDERS должно иметь значение FILES или FOLDERS.", exc_info=True)
-            logger2.error("COPY_FILES_OR_FOLDERS должно иметь значение FILES или FOLDERS.", exc_info=True)
+            logger1.error("COPY_FILES_OR_TREE должно иметь значение FILES или TREE.", exc_info=True)
+            logger2.error("COPY_FILES_OR_TREE должно иметь значение FILES или TREE.", exc_info=True)
             raise ValueError
 
     @staticmethod

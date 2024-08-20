@@ -91,13 +91,17 @@ class CopyBackup:
 
     @timer
     @log_start_finish
-    def copy_tree(self):
+    def copy_tree(self, rewrite=True):
         """Копирование директории."""
         try:
 
             for folder in self.files:
                 full_destination_path = self.destination + folder
-                if not os.path.exists(full_destination_path):
+                if os.path.exists(full_destination_path) and rewrite:
+                    shutil.rmtree(full_destination_path)
+                elif os.path.exists(full_destination_path) and not rewrite:
+                    raise OSError("Пользователь запретил удалять папку назначения.")
+                else:
                     full_source_path = self.source + folder
                     shutil.copytree(full_source_path, full_destination_path)
 

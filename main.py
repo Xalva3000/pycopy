@@ -57,7 +57,7 @@ def main():
     for index, param in groups_of_parameters.items():
         source = param["SOURCE_FOLDER"]
         destination = param["DESTINATION_FOLDER"]
-        mode = param["COPY_FILES_OR_FOLDERS"]
+        mode = param["COPY_FILES_OR_TREE"]
         schedule = param["SCHEDULE"]
         save_origin = param["SAVE_ORIGIN"]
         obsolescence_period = param["OBSOLESCENCE_PERIOD"]
@@ -90,7 +90,7 @@ def main():
                 ):
                     if mode == "FILES":
                         copy_backup.copy_obj_all()
-                    elif mode == "FOLDERS":
+                    elif mode == "TREE":
                         copy_backup.copy_tree()
                 else:
                     main_logger.info(f"Оригиналы {copy_backup.files} сохраняются.")
@@ -114,7 +114,7 @@ def main():
             if copy_backup.files:
                 if mode == "FILES":
                     copy_backup.copy_obj_all()
-                elif mode == "FOLDERS":
+                elif mode == "TREE":
                     copy_backup.copy_tree()
 
                 if copy_backup.check_size():
@@ -168,7 +168,7 @@ def main():
                         deleter_in.delete_outdated()
                         deleter_out.delete_outdated()
 
-            elif mode == "FOLDERS":
+            elif mode == "TREE":
                 if copy_backup.files:
                     copy_backup.copy_tree()
                     copy_backup.check_size()
