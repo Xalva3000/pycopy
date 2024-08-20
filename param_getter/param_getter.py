@@ -3,11 +3,13 @@ import os
 import re
 from dataclasses import dataclass
 from typing import OrderedDict
-from decors import log_finish, log_start_finish
+from decors import log_finish, log_start_finish, log_start
 import logging
 
 
-logger = logging.getLogger("root")
+logger1 = logging.getLogger("main")
+logger2 = logging.getLogger("duplicate_logger")
+
 
 
 class Validations:
@@ -22,10 +24,11 @@ class Validations:
 class ParamScheme(Validations):
     SOURCE_FOLDER: str
     DESTINATION_FOLDER: str
-    SCHEDULE: str
-    SAVE_ORIGIN: str
-    OBSOLESCENCE_PERIOD: str
-    DATE_FORMAT: str
+    COPY_FILES_OR_FOLDERS: str # FILES, FOLDERS
+    SCHEDULE: str # daily,weekly,monthly
+    SAVE_ORIGIN: str # YES,NO
+    OBSOLESCENCE_PERIOD: str # NUMBER
+    TRIGGER: str # SUBSTRING OR FULL_NAME OR YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
 
 
     @staticmethod
@@ -33,7 +36,8 @@ class ParamScheme(Validations):
         try:
             assert len(os.listdir(value)) > 0, "Неверный путь к исходной папке, или она пуста."
         except AssertionError as e:
-            logger.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+            logger1.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+            logger2.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
             raise ValueError
 
     @staticmethod
@@ -41,7 +45,17 @@ class ParamScheme(Validations):
         try:
             assert len(os.listdir(value)) >= 0, "Неверный путь к папке назначения."
         except AssertionError as e:
-            logger.error("Неверный путь к папке назначения.", exc_info=True)
+            logger1.error("Неверный путь к папке назначения.", exc_info=True)
+            logger2.error("Неверный путь к папке назначения.", exc_info=True)
+            raise ValueError
+
+    @staticmethod
+    def validate_COPY_FILES_OR_FOLDERS(value, **_):
+        try:
+            assert value in ['FILES', 'FOLDERS'], "COPY_FILES_OR_FOLDERS должно иметь значение FILES или FOLDERS."
+        except AssertionError as e:
+            logger1.error("COPY_FILES_OR_FOLDERS должно иметь значение FILES или FOLDERS.", exc_info=True)
+            logger2.error("COPY_FILES_OR_FOLDERS должно иметь значение FILES или FOLDERS.", exc_info=True)
             raise ValueError
 
     @staticmethod
@@ -51,9 +65,10 @@ class ParamScheme(Validations):
             for s in ["daily", "weekly", "monthly"]:
                 if s in value:
                     count += 1
-            assert count > 0, "Неизвестное расписание."
+            assert count > 0, "Неизвестное расписание. Должно быть daily,weekly,monthly."
         except AssertionError as e:
-            logger.error("Неизвестное расписание.", exc_info=True)
+            logger1.error("Неизвестное расписание. Должно быть daily,weekly,monthly.", exc_info=True)
+            logger2.error("Неизвестное расписание. Должно быть daily,weekly,monthly.", exc_info=True)
             raise ValueError
 
     @staticmethod
@@ -61,7 +76,8 @@ class ParamScheme(Validations):
         try:
             assert value in ['YES', 'NO'], "Не указано сохранять ли оригинал."
         except AssertionError as e:
-            logger.error("Не указано сохранять ли оригинал.", exc_info=True)
+            logger1.error("Не указано сохранять ли оригинал.", exc_info=True)
+            logger2.error("Не указано сохранять ли оригинал.", exc_info=True)
             raise ValueError
 
     @staticmethod
@@ -69,16 +85,20 @@ class ParamScheme(Validations):
         try:
             assert value.isdigit(), "Период устаревания должен быть числом."
         except AssertionError as e:
-            logger.error("Период устаревания должен быть числом.", exc_info=True)
+            logger1.error("Период устаревания должен быть числом.", exc_info=True)
+            logger2.error("Период устаревания должен быть числом.", exc_info=True)
             raise ValueError
 
     @staticmethod
-    def validate_DATE_FORMAT(value, **_):
+    def validate_TRIGGER(value, **_):
         try:
-            assert value in ["YYYYMMDD", "YYYY_MM_DD", "DD_MM_YYYY"], "Неверный путь к исходной папке, или она пуста."
+            assert isinstance(value, str), "Имя или формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
         except AssertionError as e:
-            logger.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+            logger1.error("Имя или формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
+            logger2.error("Имя или формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
             raise ValueError
+
+
 
 
 class ParamGetter:
@@ -90,7 +110,7 @@ class ParamGetter:
         """Проверка одной группы параметров"""
         flag = True
         ParamScheme(**dct)
-        if len(dct) != 6:
+        if len(dct) != 7:
             flag = False
 
         for k, v in dct.items():
@@ -102,7 +122,7 @@ class ParamGetter:
 
         raise NameError("Переменные env некорректны.")
 
-    @log_start_finish
+    @log_start
     def get_param_groups(self):
         """Прием групп параметров из файла env"""
         regex = r"^(.+)_(\d+)$"
@@ -135,5 +155,3 @@ class ParamGetter:
                 lst.append(val)
         view = f"ParamGetter<{lst}>"
         return view
-
-

@@ -30,7 +30,12 @@ class ObsolescenceDeleter:
 
     def _get_outdated(self):
         regex = r"^(\d{8})_.+"
-        files = os.listdir(self.path)
+        files = list(
+            filter(
+                lambda name: os.path.isfile(
+                    os.path.join(self.path, name)),
+                os.listdir(self.path)))
+
         result = []
 
         for file in files:

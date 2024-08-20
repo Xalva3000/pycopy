@@ -3,13 +3,13 @@ import os
 from datetime import date
 import shutil
 # import subprocess
+from LEXICON import SUPPORTED_DATE_FORMATS
 
 from copy_backup.searcher import Searcher
-from decors import log_start_finish, timer
+from decors import log_start_finish, timer, log_start
 
-
-logger = logging.getLogger(__name__)
-
+logger1 = logging.getLogger("main")
+logger2 = logging.getLogger("duplicate_logger")
 
 
 
@@ -25,22 +25,34 @@ class CopyBackup:
             source_folder: str,
             destination_folder: str,
             schedule: str,
-            date_format="YYYYMMDD",
+            mode: str = "FILES",
+            trigger="YYYYMMDD",
     ):
         self.schedule = schedule
         self.source = source_folder
+
         if self.schedule == "daily":
             self.destination = destination_folder + "daily\\"
-            os.makedirs(self.destination, exist_ok=True)
-            self.files = Searcher(source_folder, destination_folder, date_format).get_actual_difference()
         elif self.schedule == "weekly":
-            self.destination = destination_folder + "weekly\\"
-            os.makedirs(self.destination, exist_ok=True)
-            self.files = Searcher(source_folder, destination_folder, date_format).get_latest_difference()
+            self.destination = destination_folder + "weekly\\" + date.today().strftime("%d-%m") + "\\"
         elif self.schedule == "monthly":
-            self.destination = destination_folder + "monthly\\" + date.today().strftime("%m") + "\\"
-            os.makedirs(self.destination, exist_ok=True)
-            self.files = Searcher(source_folder, destination_folder, date_format).get_latest_difference()
+            self.destination = destination_folder + "monthly\\" + date.today().strftime("%Y-%m") + "\\"
+        elif self.schedule == "once":
+            self.destination = destination_folder + "once\\"
+
+        os.makedirs(self.destination, exist_ok=True)
+
+        searcher = Searcher(
+            source_folder,
+            self.destination,
+            mode,
+            trigger
+        )
+
+        if trigger in SUPPORTED_DATE_FORMATS:
+            self.files = searcher.get_latest_difference()
+        else:
+            self.files = searcher.get_triggered_names()
 
 
 
@@ -72,8 +84,28 @@ class CopyBackup:
                 with open(destination, 'wb') as file_out:
                     shutil.copyfileobj(file_in, file_out)
         except Exception as e:
-            logger.error(f"Ошибка при копировании файлового объекта. Содержание:{e}",
+            logger1.error(f"Ошибка при копировании файлового объекта. Содержание:{e}",
                          exc_info=e)
+            logger2.error(f"Ошибка при копировании файлового объекта. Содержание:{e}",
+                          exc_info=e)
+
+    @timer
+    @log_start_finish
+    def copy_tree(self):
+        """Копирование директории."""
+        try:
+
+            for folder in self.files:
+                full_destination_path = self.destination + folder
+                if not os.path.exists(full_destination_path):
+                    full_source_path = self.source + folder
+                    shutil.copytree(full_source_path, full_destination_path)
+
+        except Exception as e:
+            logger1.error(f"Ошибка при копировании директории. Содержание:{e}",
+                          exc_info=e)
+            logger2.error(f"Ошибка при копировании директории. Содержание:{e}",
+                          exc_info=e)
 
     @timer
     @log_start_finish
@@ -86,12 +118,18 @@ class CopyBackup:
                 source_size = os.path.getsize(source)
                 copy_size = os.path.getsize(copy)
                 if source_size == copy_size:
-                    logger.info(f"Исходный файл и копия одинаковы по размеру. {(source, source_size, copy, copy_size)}")
+                    logger1.info(f"Исходный файл и копия одинаковы по размеру. {(source, source_size, copy, copy_size)}")
+                    logger2.info(
+                        f"Исходный файл и копия одинаковы по размеру. {(source, source_size, copy, copy_size)}")
                 else:
-                    logger.warning(f"Исходный файл и копия отличаются по размеру. {(source, source_size, copy, copy_size)}")
+                    logger1.warning(f"Исходный файл и копия отличаются по размеру. {(source, source_size, copy, copy_size)}")
+                    logger2.warning(
+                        f"Исходный файл и копия отличаются по размеру. {(source, source_size, copy, copy_size)}")
                     return False
             except Exception as e:
-                logger.error(f"Ошибка при выполнении сверки размеров файла. Содержание {e}",
+                logger1.error(f"Ошибка при выполнении сверки размеров файла. Содержание {e}",
+                             exc_info=e)
+                logger2.error(f"Ошибка при выполнении сверки размеров файла. Содержание {e}",
                              exc_info=e)
         return True
 
@@ -103,9 +141,12 @@ class CopyBackup:
             try:
                 path = self.source + file
                 os.remove(path)
-                logger.info(f'Файл {path} удален')
+                logger1.info(f'Файл {path} удален')
+                logger2.info(f'Файл {path} удален')
             except Exception as e:
-                logger.error(f"Ошибка при удалении. Содержание:{e}",
+                logger1.error(f"Ошибка при удалении. Содержание:{e}",
+                             exc_info=e)
+                logger2.error(f"Ошибка при удалении. Содержание:{e}",
                              exc_info=e)
 
     def __str__(self):

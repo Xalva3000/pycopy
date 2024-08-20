@@ -6,6 +6,7 @@ from tqdm import tqdm
 from LEXICON import LEXICON_RU
 from param_getter import ParamGetter
 import os
+from sys import exit
 
 from filler import create_env_file, create_readme_file
 
@@ -17,6 +18,7 @@ if ".env" not in os.listdir("."):
     print(mess)
     for i in tqdm(range(10)):
         sleep(1)
+    exit()
 
 # Загрузка переменных из файла .env,
 # в котором пользователь указывает пути и список файлов,
@@ -30,5 +32,3 @@ groups_of_parameters = param_getter.get_param_groups()
 # DESTINATION_FOLDER = os.getenv('DESTINATION_FOLDER')
 # MODE = os.getenv('MODE')
 
-if __name__ == "__main__":
-    print(dotenv.dotenv_values())

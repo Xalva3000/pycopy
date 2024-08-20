@@ -31,7 +31,7 @@ def log_start_finish(func):
         logger2.info(f"Задача '{func_doc}' запускается. Параметры {args}")
         result = func(*args, **kwargs)
         logger1.info(f"Задача завершена, '{func_doc}'")
-        logger2.info(f"Задача '{func_doc}' запускается. Параметры {args}")
+        logger2.info(f"Задача завершена, '{func_doc}'")
         return result
     return wrapper
 
@@ -40,10 +40,12 @@ def log_finish(func):
     """Декоратор логирования сообщает о завершении функции"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger = logging.getLogger("main")
+        logger1 = logging.getLogger("main")
+        logger2 = logging.getLogger("duplicate_logger")
         func_doc = func.__doc__
         result = func(*args, **kwargs)
-        logger.info(f"Успешно: '{func_doc}'. Параметры: {args}")
+        logger1.info(f"Успешно: '{func_doc}'. Параметры: {args}")
+        logger2.info(f"Успешно: '{func_doc}'. Параметры: {args}")
         return result
     return wrapper
 
@@ -52,9 +54,11 @@ def log_start(func):
     """Декоратор логирования сообщает о запуске функции"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger = logging.getLogger("main")
+        logger1 = logging.getLogger("main")
+        logger2 = logging.getLogger("duplicate_logger")
         func_doc = func.__doc__
-        logger.info(f"Запуск: '{func_doc}'. Параметры: {args}")
+        logger1.info(f"Запуск: '{func_doc}'. Параметры: {args}\n")
+        logger2.info(f"Запуск: '{func_doc}'. Параметры: {args}\n")
         result = func(*args, **kwargs)
         return result
     return wrapper
