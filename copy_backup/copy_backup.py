@@ -26,27 +26,21 @@ class CopyBackup:
             destination_folder: str,
             schedule: str,
             mode: str = "FILES",
-            trigger="YYYYMMDD",
+            substring: str = "",
+            dt_format="YYYYMMDD",
     ):
         self.schedule = schedule
         self.source = source_folder
+        self.mode = mode
 
-        if self.schedule == "daily":
-            self.destination = destination_folder + "daily\\"
-        elif self.schedule == "weekly":
-            self.destination = destination_folder + "weekly\\" + date.today().strftime("%d-%m") + "\\"
-        elif self.schedule == "monthly":
-            self.destination = destination_folder + "monthly\\" + date.today().strftime("%Y-%m") + "\\"
-        elif self.schedule == "once":
-            self.destination = destination_folder + "once\\"
 
-        os.makedirs(self.destination, exist_ok=True)
 
         searcher = Searcher(
             source_folder,
             self.destination,
             mode,
-            trigger
+            substring,
+            dt_format
         )
 
         if trigger in SUPPORTED_DATE_FORMATS:
@@ -54,16 +48,11 @@ class CopyBackup:
         else:
             self.files = searcher.get_triggered_names()
 
-
-
-
-
-    @staticmethod
-    def dated_name(file_name: str) -> str:
-        """Добавляет дату в имя файла-копии."""
-        name_parts = file_name.split('.')
-        dated_name = name_parts[0] + f"-{date.today()}." + name_parts[1]
-        return dated_name
+    def __call__(self):
+        if self.mode == "FILES":
+            self.copy_obj_all()
+        elif self.mode == "TREE":
+            self.copy_tree()
 
     def copy_obj_all(self, *, max_size=1000000):
         """Цикл применения функции копирования
@@ -159,6 +148,13 @@ class CopyBackup:
     def __repr__(self):
         return f"Copybackup<{self.files}>"
 
+
+    @staticmethod
+    def dated_name(file_name: str) -> str:
+        """Добавляет дату в имя файла-копии."""
+        name_parts = file_name.split('.')
+        dated_name = name_parts[0] + f"-{date.today()}." + name_parts[1]
+        return dated_name
 
     # def copy_subproc_all(self):
     #     """Цикл применения создания подпроцесса копирования

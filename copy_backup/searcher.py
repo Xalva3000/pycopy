@@ -5,45 +5,59 @@ from datetime import datetime, date, timedelta
 
 class Searcher:
     """Класс для определения списка копируемых файлов"""
+    DT_FORMATS = {"YYYYMMDD": {"regex": r"(\d{8})", "dt_code": "%Y%m%d"},
+                  "YYMMDD": {"regex": r"(\d{6})", "dt_code": "%y%m%d"},
+                  "DD_MM_YYYY": {"regex": r"(\d\d_\d\d_\d{4})", "dt_code": "%d_%m_%Y"},
+                  "YYYY_MM_DD": {"regex": r"(\d{4}_\d\d_\d\d)", "dt_code": "%Y_%m_%d"},
+                  None: {"regex": "", "dt_code": ""}}
 
-    def __init__(self, source_path, destination_path, mode="FILES", trigger=None):
+    def __init__(self, source_path, destination_path, mode="FILES", substring=None, dt_format=None):
+        self.mode = mode
+        self.dt_format = dt_format
+        self.regex = Searcher.DT_FORMATS[dt_format]["regex"]
+        self.date_format = Searcher.DT_FORMATS[dt_format]["dt_code"]
+        self.substring = substring or ""
+        self.source = self.accept_filters(source_path)
+        self.destination = self.accept_filters(destination_path)
+
+
+    @staticmethod
+    def _filter_mode(path, mode):
         if mode == "FILES":
-            self.source = list(
+            lst = list(
                 filter(
                     lambda name: os.path.isfile(
-                        os.path.join(source_path, name)),
-                        os.listdir(source_path)))
-            self.destination = list(
-                filter(
-                    lambda name: os.path.isfile(
-                        os.path.join(destination_path, name)),
-                        os.listdir(destination_path)))
+                        os.path.join(path, name)),
+                    os.listdir(path)))
         elif mode == "TREE":
-            self.source = list(
+            lst = list(
                 filter(
                     lambda name: os.path.isdir(
-                        os.path.join(source_path, name)),
-                        os.listdir(source_path)))
-            self.destination = list(
-                filter(
-                    lambda name: os.path.isdir(
-                        os.path.join(destination_path, name)),
-                        os.listdir(destination_path)))
-
-        if trigger == "YYYYMMDD":
-            self.regex = r"(\d{8})"
-            self.repr_format = "%Y%m%d"
-        elif trigger == "YYMMDD":
-            self.regex = r"(\d{6})"
-            self.repr_format = "%y%m%d"
-        elif trigger == "DD_MM_YYYY":
-            self.regex = r"(\d\d_\d\d_\d{4})"
-            self.repr_format = "%d_%m_%Y"
-        elif trigger == "YYYY_MM_DD":
-            self.regex = r"(\d{4}_\d\d_\d\d)"
-            self.repr_format = "%Y_%m_%d"
+                        os.path.join(path, name)),
+                        os.listdir(path)))
         else:
-            self.trigger = trigger
+            lst = []
+        return lst
+
+    @staticmethod
+    def _filter_substring(lst, substring):
+        if substring:
+            return list(filter(lambda name: substring in name, lst))
+        return lst
+
+    @staticmethod
+    def _filter_date_format(lst, regex):
+        if regex:
+            return list(filter(lambda name: re.search(regex, name), lst))
+        return lst
+
+    def accept_filters(self, path):
+        lst = self._filter_mode(path, self.mode)
+        if self.substring:
+            lst = self._filter_substring(lst, self.substring)
+        if self.dt_format:
+            lst = self._filter_date_format(lst, self.regex)
+        return lst
 
 
 
@@ -52,15 +66,11 @@ class Searcher:
         for file_name in lst:
             match = re.search(self.regex, file_name)
             if match and match.group(1):
-                dates.append(datetime.strptime(match.group(1), self.repr_format))
+                dates.append(datetime.strptime(match.group(1), self.date_format))
         if dates:
             latest_date = max(dates)
             return latest_date
         return None
-
-    def _dated_files(self, lst):
-        dated_files = list(filter(lambda d: re.search(self.regex, d), lst))
-        return dated_files
 
     def get_full_difference(self):
         """Возвращает массив названий файлов, содержащихся
@@ -78,12 +88,17 @@ class Searcher:
         for name in self.source:
             match = re.search(self.regex, name)
             if match:
-                file_date = datetime.strptime(match.group(1), self.repr_format).date()
+                file_date = datetime.strptime(match.group(1), self.date_format).date()
                 if file_date > oldest_date:
                     actual_source.append(name)
 
         actual_difference = set(self.source).difference(self.destination)
         return actual_difference
+
+    def get_latest(self, lst):
+        latest_date_str = self._latest_date(lst).strftime(self.date_format)
+        result = list(filter(lambda name: latest_date_str in name, lst))
+        return result
 
 
     def get_latest_difference(self):
@@ -93,21 +108,7 @@ class Searcher:
 
         if not latest_date_destination or latest_date_source > latest_date_destination:
             for name in self.source:
-                if latest_date_source.strftime(self.repr_format) in name:
+                if latest_date_source.strftime(self.date_format) in name:
                     latest_source.append(name)
         latest_difference = set(latest_source).difference(self.destination)
         return latest_difference
-
-    def get_triggered_names(self, difference=False):
-        triggered_names = filter(lambda name: self.trigger in name, self.source)
-        if not difference:
-            return set(triggered_names)
-        else:
-            return set(triggered_names).difference(self.destination)
-
-
-
-
-
-
-

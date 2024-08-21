@@ -28,7 +28,8 @@ class ParamScheme(Validations):
     SCHEDULE: str # daily,weekly,monthly
     SAVE_ORIGIN: str # YES,NO
     OBSOLESCENCE_PERIOD: str # NUMBER
-    TRIGGER: str # SUBSTRING OR FULL_NAME OR YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
+    SUBSTRING: str # SUBSTRING
+    DATE_FORMAT: str # YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
 
 
     @staticmethod
@@ -90,12 +91,21 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_TRIGGER(value, **_):
+    def validate_SUBSTRING(value, **_):
         try:
-            assert isinstance(value, str), "Имя или формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
+            assert isinstance(value, str), "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
         except AssertionError as e:
-            logger1.error("Имя или формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
-            logger2.error("Имя или формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
+            logger1.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
+            logger2.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
+            raise ValueError
+
+    @staticmethod
+    def validate_DATE_FORMAT(value, **_):
+        try:
+            assert value in ["YYYYMMDD", "DDMMYYYY", "YYYY_MM_DD", "DD_MM_YYYY", "YYMMDD"], "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
+        except AssertionError as e:
+            logger1.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
+            logger2.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
             raise ValueError
 
 
@@ -104,13 +114,15 @@ class ParamScheme(Validations):
 class ParamGetter:
     def __init__(self, env_variables: OrderedDict[str, str]):
         self.vars = env_variables
+        self.as_dct = self.get_param_groups()
+        self.as_schemes = self.get_param_schemes()
 
     @staticmethod
-    def check_groups(dct):
+    def check_group(dct):
         """Проверка одной группы параметров"""
         flag = True
         ParamScheme(**dct)
-        if len(dct) != 7:
+        if len(dct) != 8:
             flag = False
 
         for k, v in dct.items():
@@ -136,9 +148,13 @@ class ParamGetter:
                 dct[match.group(1)] = value
 
         for gr in param_groups.values():
-            self.check_groups(gr)
+            self.check_group(gr)
 
         return param_groups
+
+    def get_param_schemes(self):
+        for i, v in self.as_dct.items():
+
 
     def __str__(self):
         lst = []
