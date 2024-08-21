@@ -107,6 +107,7 @@ def main():
                 destination,
                 schedule="weekly",
                 mode=mode,
+                dt_format=
                 trigger=trigger,
             )
             main_logger.info(f"Файлы для копирования: {copy_backup.files}\n")

@@ -15,25 +15,25 @@ logger2 = logging.getLogger("duplicate_logger")
 class Validations:
     def __post_init__(self):
         for name, field in self.__dataclass_fields__.items():
-            method = getattr(self, f"validate_{name}", None)
+            method = getattr(self, f"validate_{name.lower()}", None)
             if method:
-                setattr(self, name, method(getattr(self, name), field=field))
+                setattr(self, name.lower(), method(getattr(self, name), field=field))
 
 
 @dataclass
 class ParamScheme(Validations):
-    SOURCE_FOLDER: str
-    DESTINATION_FOLDER: str
-    COPY_FILES_OR_TREE: str # FILES, TREE
-    SCHEDULE: str # daily,weekly,monthly
-    SAVE_ORIGIN: str # YES,NO
-    OBSOLESCENCE_PERIOD: str # NUMBER
-    SUBSTRING: str # SUBSTRING
-    DATE_FORMAT: str # YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
+    source_folder: str
+    destination_folder: str
+    copy_files_or_tree: str # FILES, TREE
+    schedule: str # daily,weekly,monthly
+    save_origin: str # YES,NO
+    obsolescence_period: str # NUMBER
+    substring: str # SUBSTRING
+    date_format: str # YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
 
 
     @staticmethod
-    def validate_SOURCE_FOLDER(value, **_):
+    def validate_source_folder(value, **_):
         try:
             assert len(os.listdir(value)) > 0, "Неверный путь к исходной папке, или она пуста."
         except AssertionError as e:
@@ -42,7 +42,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_DESTINATION_FOLDER(value, **_):
+    def validate_destination_folder(value, **_):
         try:
             assert len(os.listdir(value)) >= 0, "Неверный путь к папке назначения."
         except AssertionError as e:
@@ -51,7 +51,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_COPY_FILES_OR_TREE(value, **_):
+    def validate_copy_files_or_tree(value, **_):
         try:
             assert value in ['FILES', 'TREE'], "COPY_FILES_OR_TREE должно иметь значение FILES или TREE."
         except AssertionError as e:
@@ -60,7 +60,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_SCHEDULE(value, **_):
+    def validate_schedule(value, **_):
         try:
             count = 0
             for s in ["daily", "weekly", "monthly"]:
@@ -73,7 +73,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_SAVE_ORIGIN(value, **_):
+    def validate_save_origin(value, **_):
         try:
             assert value in ['YES', 'NO'], "Не указано сохранять ли оригинал."
         except AssertionError as e:
@@ -82,7 +82,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_OBSOLESCENCE_PERIOD(value, **_):
+    def validate_obsolescence_period(value, **_):
         try:
             assert value.isdigit(), "Период устаревания должен быть числом."
         except AssertionError as e:
@@ -91,7 +91,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_SUBSTRING(value, **_):
+    def validate_substring(value, **_):
         try:
             assert isinstance(value, str), "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
         except AssertionError as e:
@@ -100,7 +100,7 @@ class ParamScheme(Validations):
             raise ValueError
 
     @staticmethod
-    def validate_DATE_FORMAT(value, **_):
+    def validate_date_format(value, **_):
         try:
             assert value in ["YYYYMMDD", "DDMMYYYY", "YYYY_MM_DD", "DD_MM_YYYY", "YYMMDD"], "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
         except AssertionError as e:
@@ -145,7 +145,7 @@ class ParamGetter:
             if match.group(2).isdigit():
                 id_num = int(match.group(2))
                 dct = param_groups.setdefault(id_num, {})
-                dct[match.group(1)] = value
+                dct[match.group(1).lower()] = value
 
         for gr in param_groups.values():
             self.check_group(gr)
@@ -153,7 +153,11 @@ class ParamGetter:
         return param_groups
 
     def get_param_schemes(self):
+        dct = {}
         for i, v in self.as_dct.items():
+            dct[i] = ParamScheme(**v)
+        return dct
+
 
 
     def __str__(self):

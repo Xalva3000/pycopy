@@ -1,11 +1,14 @@
 from datetime import date
+import os
 
-from param_getter import ParamGetter
+from param_getter import ParamScheme
 
 
 class PlaceManager:
-    def __init__(self, source_folder, destination_folder, params: ParamScheme):
-        self.schedule = params
+    def __init__(self, params: ParamScheme):
+        self.schedule = params.schedule
+        destination_folder = params.destination_folder
+
         if self.schedule == "daily":
             self.destination = destination_folder + "daily\\"
         elif self.schedule == "weekly":
@@ -15,4 +18,10 @@ class PlaceManager:
         elif self.schedule == "once":
             self.destination = destination_folder + "once\\"
 
+    def create_if_not_exists(self):
         os.makedirs(self.destination, exist_ok=True)
+        return self.destination
+
+    def remove_similar(self, lst):
+        for file_name in lst:
+            os.remove(self.destination + file_name)

@@ -1,3 +1,3 @@
-__all__ = ('ParamGetter',)
+__all__ = ('ParamGetter', 'ParamScheme', )
 
-from .param_getter import ParamGetter
+from .param_getter import ParamGetter, ParamScheme
