@@ -4,9 +4,11 @@ from datetime import date
 import shutil
 # import subprocess
 from LEXICON import SUPPORTED_DATE_FORMATS
+from time import sleep
 
 from copy_backup.searcher import Searcher
 from decors import log_start_finish, timer, log_start
+from param_getter import ParamScheme
 
 logger1 = logging.getLogger("main")
 logger2 = logging.getLogger("duplicate_logger")
@@ -22,37 +24,34 @@ class CopyBackup:
     :schedule:: расписание daily/weekly/monthly"""
     def __init__(
             self,
-            source_folder: str,
-            destination_folder: str,
-            schedule: str,
-            mode: str = "FILES",
-            substring: str = "",
-            dt_format="YYYYMMDD",
+            destination_folder,
+            params: ParamScheme,
     ):
-        self.schedule = schedule
-        self.source = source_folder
-        self.mode = mode
-
-
+        self.params = params
+        self.destination = destination_folder
+        self.schedule = params.schedule
+        self.source = params.source_folder
+        self.mode = params.copy_files_or_tree
 
         searcher = Searcher(
-            source_folder,
             self.destination,
-            mode,
-            substring,
-            dt_format
+            params=params,
         )
 
-        if trigger in SUPPORTED_DATE_FORMATS:
-            self.files = searcher.get_latest_difference()
-        else:
-            self.files = searcher.get_triggered_names()
+        self.files = searcher.files
 
     def __call__(self):
+        if self.params.replace_tree == "NO":
+            rewrite = False
+        else:
+            rewrite = True
+
         if self.mode == "FILES":
             self.copy_obj_all()
         elif self.mode == "TREE":
-            self.copy_tree()
+
+            self.copy_tree(rewrite=rewrite)
+            print(os.listdir(self.destination))
 
     def copy_obj_all(self, *, max_size=1000000):
         """Цикл применения функции копирования
@@ -85,14 +84,16 @@ class CopyBackup:
         try:
 
             for folder in self.files:
+                print(folder)
                 full_destination_path = self.destination + folder
                 if os.path.exists(full_destination_path) and rewrite:
                     shutil.rmtree(full_destination_path)
+                    sleep(0.1)
                 elif os.path.exists(full_destination_path) and not rewrite:
-                    raise OSError("Пользователь запретил удалять папку назначения.")
-                else:
-                    full_source_path = self.source + folder
-                    shutil.copytree(full_source_path, full_destination_path)
+                    raise OSError("Пользователь запретил удалять одноименную папку в назначении.")
+
+                full_source_path = self.source + folder
+                shutil.copytree(full_source_path, full_destination_path)
 
         except Exception as e:
             logger1.error(f"Ошибка при копировании директории. Содержание:{e}",

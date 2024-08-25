@@ -1,11 +1,11 @@
 
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import OrderedDict
 from decors import log_start
 import logging
-
+from LEXICON import DT_CODES_AND_REGEX
 
 logger1 = logging.getLogger("main")
 logger2 = logging.getLogger("duplicate_logger")
@@ -20,35 +20,56 @@ class Validations:
                 setattr(self, name.lower(), method(getattr(self, name), field=field))
 
 
-@dataclass
+
+@dataclass(order=False)
 class ParamScheme(Validations):
     source_folder: str
     destination_folder: str
     copy_files_or_tree: str # FILES, TREE
     schedule: str # daily,weekly,monthly
     save_origin: str # YES,NO
+    replace_tree: str
     obsolescence_period: str # NUMBER
     substring: str # SUBSTRING
     date_format: str # YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
+    date_code: str = field(init=False)
+    date_regex: str = field(init=False)
 
+    def __post_init__(self):
+        self.date_code = DT_CODES_AND_REGEX[self.date_format]["dt_code"]
+        self.date_regex = DT_CODES_AND_REGEX[self.date_format]["regex"]
 
     @staticmethod
     def validate_source_folder(value, **_):
         try:
-            assert len(os.listdir(value)) > 0, "Неверный путь к исходной папке, или она пуста."
+            assert len(os.listdir(value)) > 0, "Неверный путь к исходной директории, или она пуста."
         except AssertionError as e:
-            logger1.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
-            logger2.error("Неверный путь к исходной папке, или она пуста.", exc_info=True)
+            logger1.error("Неверный путь к исходной директории, или она пуста.", exc_info=True)
+            logger2.error("Неверный путь к исходной директории, или она пуста.", exc_info=True)
             raise ValueError
+        except FileNotFoundError:
+            logger1.error("Исходная директория не найдена.", exc_info=True)
+            logger2.error("Исходная директория не найдена.", exc_info=True)
+        else:
+            logger1.error(f"Исходная директория принята. {value}")
+            logger2.error(f"Исходная директория принята. {value}")
+        return value
 
     @staticmethod
     def validate_destination_folder(value, **_):
         try:
-            assert len(os.listdir(value)) >= 0, "Неверный путь к папке назначения."
+            assert len(os.listdir(value)) >= 0, "Неверный путь к директории назначения."
         except AssertionError as e:
-            logger1.error("Неверный путь к папке назначения.", exc_info=True)
-            logger2.error("Неверный путь к папке назначения.", exc_info=True)
+            logger1.error("Неверный путь к директории назначения.", exc_info=True)
+            logger2.error("Неверный путь к директории назначения.", exc_info=True)
             raise ValueError
+        except FileNotFoundError:
+            logger1.error("Директория назначения не найдена.", exc_info=True)
+            logger2.error("Директория назначения не найдена.", exc_info=True)
+        else:
+            logger1.error(f"Директория назначения принята. {value}")
+            logger2.error(f"Директория назначения принята. {value}")
+        return value
 
     @staticmethod
     def validate_copy_files_or_tree(value, **_):
@@ -58,19 +79,17 @@ class ParamScheme(Validations):
             logger1.error("COPY_FILES_OR_TREE должно иметь значение FILES или TREE.", exc_info=True)
             logger2.error("COPY_FILES_OR_TREE должно иметь значение FILES или TREE.", exc_info=True)
             raise ValueError
+        return value
 
     @staticmethod
     def validate_schedule(value, **_):
         try:
-            count = 0
-            for s in ["daily", "weekly", "monthly"]:
-                if s in value:
-                    count += 1
-            assert count > 0, "Неизвестное расписание. Должно быть daily,weekly,monthly."
+            assert value in ["daily", "weekly", "monthly", "once"], "Неизвестное расписание. Должно быть once, daily,weekly или monthly."
         except AssertionError as e:
-            logger1.error("Неизвестное расписание. Должно быть daily,weekly,monthly.", exc_info=True)
-            logger2.error("Неизвестное расписание. Должно быть daily,weekly,monthly.", exc_info=True)
+            logger1.error("Неизвестное расписание. Должно быть once, daily,weekly или monthly.", exc_info=True)
+            logger2.error("Неизвестное расписание. Должно быть once, daily,weekly или monthly.", exc_info=True)
             raise ValueError
+        return value
 
     @staticmethod
     def validate_save_origin(value, **_):
@@ -80,33 +99,47 @@ class ParamScheme(Validations):
             logger1.error("Не указано сохранять ли оригинал.", exc_info=True)
             logger2.error("Не указано сохранять ли оригинал.", exc_info=True)
             raise ValueError
+        return value
+
+    @staticmethod
+    def validate_replace_tree(value, **_):
+        try:
+            assert value in ['YES', 'NO'], "Не указано сохранять ли одноименные директории в папке назначения."
+        except AssertionError as e:
+            logger1.error("Не указано сохранять ли одноименные директории в папке назначения.", exc_info=True)
+            logger2.error("Не указано сохранять ли одноименные директории в папке назначения.", exc_info=True)
+            raise ValueError
+        return value
 
     @staticmethod
     def validate_obsolescence_period(value, **_):
         try:
-            assert value.isdigit(), "Период устаревания должен быть числом."
+            assert value.isdigit() or value == "", "Период устаревания должен быть числом."
         except AssertionError as e:
             logger1.error("Период устаревания должен быть числом.", exc_info=True)
             logger2.error("Период устаревания должен быть числом.", exc_info=True)
             raise ValueError
+        return value
 
     @staticmethod
     def validate_substring(value, **_):
         try:
-            assert isinstance(value, str), "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
+            assert isinstance(value, str), "SUBSTRING должна быть строкой"
         except AssertionError as e:
-            logger1.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
-            logger2.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
+            logger1.error("SUBSTRING должна быть строкой", exc_info=True)
+            logger2.error("SUBSTRING должна быть строкой", exc_info=True)
             raise ValueError
+        return value
 
     @staticmethod
     def validate_date_format(value, **_):
         try:
-            assert value in ["YYYYMMDD", "DDMMYYYY", "YYYY_MM_DD", "DD_MM_YYYY", "YYMMDD"], "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
+            assert value in ["YYYYMMDD", "DDMMYYYY", "YYYY_MM_DD", "DD_MM_YYYY", "YYMMDD", ''], "Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD."
         except AssertionError as e:
             logger1.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
             logger2.error("Установите формат даты: YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD.", exc_info=True)
             raise ValueError
+        return value
 
 
 
@@ -122,12 +155,13 @@ class ParamGetter:
         """Проверка одной группы параметров"""
         flag = True
         ParamScheme(**dct)
-        if len(dct) != 8:
+        if len(dct) != 9:
             flag = False
 
-        for k, v in dct.items():
-            if not k or not v:
-                flag = False
+        # for k, v in dct.items():
+        #     print(k,v)
+        #     if not k or not v:
+        #         flag = False
 
         if flag:
             return True
@@ -147,14 +181,16 @@ class ParamGetter:
                 dct = param_groups.setdefault(id_num, {})
                 dct[match.group(1).lower()] = value
 
-        for gr in param_groups.values():
-            self.check_group(gr)
+        #
+        # for gr in param_groups.values():
+        #     self.check_group(gr)
 
         return param_groups
 
     def get_param_schemes(self):
         dct = {}
         for i, v in self.as_dct.items():
+
             dct[i] = ParamScheme(**v)
         return dct
 
@@ -162,9 +198,9 @@ class ParamGetter:
 
     def __str__(self):
         lst = []
-        for var in self.vars:
+        for var, val in self.vars.items():
             if "SOURCE" in var:
-                lst.append(var)
+                lst.append(val)
         view = f"ParamGetter<{lst}>"
         return view
 

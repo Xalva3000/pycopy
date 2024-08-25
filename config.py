@@ -25,7 +25,6 @@ if ".env" not in os.listdir("."):
 # в окружение
 dotenv.load_dotenv()
 param_getter = ParamGetter(dotenv.dotenv_values())
-groups_of_parameters = param_getter.get_param_groups()
 
 # Объявление переменных из окружения
 # SOURCE_FOLDER = os.getenv('SOURCE_FOLDER')

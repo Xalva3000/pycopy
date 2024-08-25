@@ -1,4 +1,4 @@
-from copy_backup import CopyBackup, ObsolescenceDeleter
+from copy_backup import PlaceManager
 
 from time import sleep
 from datetime import date
@@ -52,133 +52,16 @@ main_logger.addHandler(file_handler)
 @log_start_finish
 def main():
     """Экземпляр программы py-copy."""
-    from config import groups_of_parameters
-
-    for index, param in groups_of_parameters.items():
-        source = param["SOURCE_FOLDER"]
-        destination = param["DESTINATION_FOLDER"]
-        mode = param["COPY_FILES_OR_TREE"]
-        schedule = param["SCHEDULE"]
-        save_origin = param["SAVE_ORIGIN"]
-        obsolescence_period = param["OBSOLESCENCE_PERIOD"]
-        trigger = param["TRIGGER"]
-        monthly_schedule_done = False
-
-        if "monthly" in schedule:
-            if date.today().day in range(1, 6) or (
-                date.today().day in range(1, 12) and date.today().month == 1
-            ):
-                main_logger.info(f"Копирование по расписанию monthly для директории {source}")
-                # logger_duplicate.info(f"Копирование по расписанию monthly для директории {source}")
-                # Месячный бэкап
-                copy_backup = CopyBackup(
-                    source,
-                    destination,
-                    schedule="monthly",
-                    mode=mode,
-                    trigger=trigger,
-                )
-                copy_backup.copy_obj_all()
-
-                main_logger.info(f"Файлы для копирования: {copy_backup.files}")
-                # logger_duplicate.info(f"Файлы для копирования: {copy_backup.files}")
-
-                if (
-                    save_origin == "NO"
-                    and copy_backup.files
-                    and copy_backup.check_size()
-                ):
-                    if mode == "FILES":
-                        copy_backup.copy_obj_all()
-                    elif mode == "TREE":
-                        copy_backup.copy_tree()
-                else:
-                    main_logger.info(f"Оригиналы {copy_backup.files} сохраняются.")
-                    # logger_duplicate.info(f"Оригиналы {copy_backup.files} не удаляются")
-
-                monthly_schedule_done = True
-
-        if "weekly" in schedule and not monthly_schedule_done:
-            main_logger.info(f"Копирование по расписанию weekly для директории {source}")
-            # logger_duplicate.info(f"Копирование по расписанию weekly для директории {source}")
-            # Недельный бэкап
-            copy_backup = CopyBackup(
-                source,
-                destination,
-                schedule="weekly",
-                mode=mode,
-                dt_format=
-                trigger=trigger,
-            )
-            main_logger.info(f"Файлы для копирования: {copy_backup.files}\n")
-            # logger_duplicate.info(f"Файлы для копирования: {copy_backup.files}")
-            if copy_backup.files:
-                if mode == "FILES":
-                    copy_backup.copy_obj_all()
-                elif mode == "TREE":
-                    copy_backup.copy_tree()
-
-                if copy_backup.check_size():
-
-                    if save_origin == "NO":
-                        copy_backup.delete_origin()
-                    else:
-                        main_logger.info(f"Оригиналы {copy_backup.files} сохраняются.")
-                        # logger_duplicate.info(f"Оригиналы {copy_backup.files} не удаляются")
-
-        if "daily" in schedule:
-
-            # инициализация объекта копировщика
-            copy_backup = CopyBackup(
-                source,
-                destination,
-                schedule="daily",
-                mode=mode,
-                trigger=trigger,
-            )
-            file_handler_duplicate = logging.FileHandler(
-                copy_backup.destination + f"{d_today}_pycopy_logs.txt",
-                mode="a",
-                encoding="utf-8",
-            )
-            logger_duplicate.addHandler(file_handler_duplicate)
-
-            main_logger.info(f"Копирование по расписанию daily для директории {source}")
-            logger_duplicate.info(f"Копирование по расписанию daily для директории {source}")
-
-            main_logger.info(f"Файлы для копирования: {copy_backup.files}\n")
-            logger_duplicate.info(f"Файлы для копирования: {copy_backup.files}\n")
-            # копирование всего содержащегося в исходной папке,
-            # чего нет в папке назначении
-            if mode == "FILES":
-                if copy_backup.files:
-                    copy_backup.copy_obj_all()
-
-                    if copy_backup.check_size():
-                        # настройка удаления
-                        deleter_in = ObsolescenceDeleter(
-                            folder_path=copy_backup.source,
-                            obsolescence_period=obsolescence_period,
-                        )
-                        deleter_out = ObsolescenceDeleter(
-                            folder_path=copy_backup.destination,
-                            obsolescence_period=obsolescence_period,
-                        )
-
-                        # поиск и удаление устаревших файлов
-                        deleter_in.delete_outdated()
-                        deleter_out.delete_outdated()
-
-            elif mode == "TREE":
-                if copy_backup.files:
-                    copy_backup.copy_tree()
-                    copy_backup.check_size()
-
-            # Сверка размеров копий с оригиналами
-            # Удаление устаревших файлов
+    from config import param_getter
 
 
-            logger_duplicate.removeHandler(file_handler_duplicate)
+    for index, param in param_getter.as_schemes.items():
+        pm = PlaceManager(param)
+        pm.create_if_not_exists()
+
+        with pm:
+            print('sm')
+
 
 
 # Запуск основной функции

@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime, date, timedelta
+from param_getter import ParamScheme
 
 
 class Searcher:
@@ -11,14 +12,19 @@ class Searcher:
                   "YYYY_MM_DD": {"regex": r"(\d{4}_\d\d_\d\d)", "dt_code": "%Y_%m_%d"},
                   None: {"regex": "", "dt_code": ""}}
 
-    def __init__(self, source_path, destination_path, mode="FILES", substring=None, dt_format=None):
-        self.mode = mode
-        self.dt_format = dt_format
-        self.regex = Searcher.DT_FORMATS[dt_format]["regex"]
-        self.date_format = Searcher.DT_FORMATS[dt_format]["dt_code"]
-        self.substring = substring or ""
-        self.source = self.accept_filters(source_path)
+    def __init__(self, destination_path, params: ParamScheme):
+        self.params = params
+        self.mode = params.copy_files_or_tree
+        self.dt_format = params.date_format or None
+        self.regex = self.params.date_regex
+        self.date_format = self.params.date_code
+        self.substring = params.substring
+        self.source = self.accept_filters(params.source_folder)
         self.destination = self.accept_filters(destination_path)
+        if params.schedule == "daily":
+            self.files = self.get_actual_difference()
+        elif params.schedule == "weekly":
+            self.files = self.get_latest()
 
 
     @staticmethod
@@ -63,6 +69,7 @@ class Searcher:
 
     def _latest_date(self, lst):
         dates = []
+
         for file_name in lst:
             match = re.search(self.regex, file_name)
             if match and match.group(1):
@@ -79,10 +86,10 @@ class Searcher:
         return full_difference
 
 
-    def get_actual_difference(self, period: int = 7):
+    def get_actual_difference(self):
         """Возвращает массив названий актуальных (неустаревших) файлов,
         из исходной попки, которых нет в папке назначения"""
-        oldest_date = (datetime.today() - timedelta(days=period)).date()
+        oldest_date = (datetime.today() - timedelta(days=int(self.params.obsolescence_period))).date()
         actual_source = []
 
         for name in self.source:
@@ -95,10 +102,13 @@ class Searcher:
         actual_difference = set(self.source).difference(self.destination)
         return actual_difference
 
-    def get_latest(self, lst):
-        latest_date_str = self._latest_date(lst).strftime(self.date_format)
-        result = list(filter(lambda name: latest_date_str in name, lst))
-        return result
+    def get_latest(self, lst=None):
+        _lst = lst or self.source
+        if self.date_format:
+            latest_date_str = self._latest_date(_lst).strftime(self.date_format)
+            result = list(filter(lambda name: latest_date_str in name, lst))
+            return result
+        return _lst
 
 
     def get_latest_difference(self):

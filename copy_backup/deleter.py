@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from decors import log_start_finish, timer
 import re
 
+from param_getter import ParamScheme
 
 logger = logging.getLogger("main")
 
@@ -12,13 +13,12 @@ class ObsolescenceDeleter:
     def __init__(
             self,
             folder_path: str,
-            obsolescence_period: int = 7,
-            *,
-            date_format: str = "%Y%m%d"):
+            params: ParamScheme):
 
         self.path = folder_path
-        self.brink_date = self._get_brink_date(int(obsolescence_period))
-        self.date_format = date_format
+        self.brink_date = self._get_brink_date(int(params.obsolescence_period))
+        self.date_format = params.date_code
+        self.date_regex = params.date_regex
 
 
     def _get_brink_date(self, days: int):
@@ -29,7 +29,6 @@ class ObsolescenceDeleter:
         return brink
 
     def _get_outdated(self):
-        regex = r"^(\d{8})_.+"
         files = list(
             filter(
                 lambda name: os.path.isfile(
@@ -39,7 +38,7 @@ class ObsolescenceDeleter:
         result = []
 
         for file in files:
-            obj = re.fullmatch(regex, file)
+            obj = re.fullmatch(self.date_regex, file)
             if obj:
                 file_date = datetime.strptime(obj.group(1), self.date_format)
                 if file_date < self.brink_date:
