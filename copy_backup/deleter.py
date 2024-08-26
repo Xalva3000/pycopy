@@ -15,6 +15,7 @@ class ObsolescenceDeleter:
             folder_path: str,
             params: ParamScheme):
 
+        self.params = params
         self.path = folder_path
         self.brink_date = self._get_brink_date(int(params.obsolescence_period))
         self.date_format = params.date_code
@@ -22,34 +23,40 @@ class ObsolescenceDeleter:
 
 
     def _get_brink_date(self, days: int):
-
         date_today = datetime.today()
         period = timedelta(days=days)
         brink = date_today - period
         return brink
 
     def _get_outdated(self):
-        files = list(
-            filter(
-                lambda name: os.path.isfile(
-                    os.path.join(self.path, name)),
-                os.listdir(self.path)))
+        if self.params.copy_files_or_tree == "FILES":
+            names = list(
+                filter(
+                    lambda name: os.path.isfile(
+                        os.path.join(self.path, name)),
+                    os.listdir(self.path)))
+        else:
+            names = list(
+                filter(
+                    lambda name: os.path.isdir(
+                        os.path.join(self.path, name)),
+                    os.listdir(self.path)))
 
-        result = []
+        outdated = []
 
-        for file in files:
-            obj = re.fullmatch(self.date_regex, file)
+        for name in names:
+            obj = re.fullmatch(self.date_regex, name)
             if obj:
                 file_date = datetime.strptime(obj.group(1), self.date_format)
                 if file_date < self.brink_date:
-                    result.append(file)
-        if not result:
+                    outdated.append(name)
+        if not outdated:
             logger.info(f"Устаревших файлов не обнаружено. {self.path}\n")
-        return result
+        return outdated
 
     def delete_outdated(self):
-        files = self._get_outdated()
-        for file in files:
+        outdated = self._get_outdated()
+        for file in outdated:
             file_path = self.path + file
             self._delete(file_path)
 
