@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 from datetime import datetime, timedelta
 from decors import log_start_finish, timer
 import re
@@ -13,10 +14,11 @@ class ObsolescenceDeleter:
     def __init__(
             self,
             folder_path: str,
-            params: ParamScheme):
+            params: ParamScheme,
+    ):
 
-        self.params = params
         self.path = folder_path
+        self.params = params
         self.brink_date = self._get_brink_date(int(params.obsolescence_period))
         self.date_format = params.date_code
         self.date_regex = params.date_regex
@@ -28,7 +30,7 @@ class ObsolescenceDeleter:
         brink = date_today - period
         return brink
 
-    def _get_outdated(self):
+    def _get_files_or_dirs(self):
         if self.params.copy_files_or_tree == "FILES":
             names = list(
                 filter(
@@ -41,13 +43,18 @@ class ObsolescenceDeleter:
                     lambda name: os.path.isdir(
                         os.path.join(self.path, name)),
                     os.listdir(self.path)))
+        return names
+
+    def _get_outdated(self):
+        names = self._get_files_or_dirs()
 
         outdated = []
 
         for name in names:
-            obj = re.fullmatch(self.date_regex, name)
-            if obj:
-                file_date = datetime.strptime(obj.group(1), self.date_format)
+            match = re.search(self.date_regex, name.split(".")[0])
+            if match:
+                _dt = match.group(1) or match.group(2)
+                file_date = datetime.strptime(_dt, self.date_format)
                 if file_date < self.brink_date:
                     outdated.append(name)
         if not outdated:
@@ -60,15 +67,24 @@ class ObsolescenceDeleter:
             file_path = self.path + file
             self._delete(file_path)
 
-    @staticmethod
+
     @timer
     @log_start_finish
-    def _delete(file_path):
-        """Удаление устаревшего файла"""
-        os.remove(file_path)
+    def _delete(self, path):
+        """Удаление устаревшего файла или директории"""
+        if self.params.copy_files_or_tree == "FILES":
+            os.remove(path)
+        else:
+            shutil.rmtree(path)
 
     def __str__(self):
+        folder = self.path.split("\\")[-1]
 
+        date_str = self.brink_date.strftime(self.date_format)
+        view = f"Deleter<{folder}\\{date_str}>"
+        return view
+
+    def __repr__(self):
         folder = self.path.split("\\")[-1]
 
         date_str = self.brink_date.strftime(self.date_format)

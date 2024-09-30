@@ -1,7 +1,7 @@
-
 import os
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from typing import OrderedDict
 from decors import log_start
 import logging
@@ -9,7 +9,6 @@ from LEXICON import DT_CODES_AND_REGEX
 
 logger1 = logging.getLogger("main")
 logger2 = logging.getLogger("duplicate_logger")
-
 
 
 class Validations:
@@ -20,13 +19,12 @@ class Validations:
                 setattr(self, name.lower(), method(getattr(self, name), field=field))
 
 
-
 @dataclass(order=False)
 class ParamScheme(Validations):
     source_folder: str
     destination_folder: str
     copy_files_or_tree: str # FILES, TREE
-    schedule: str # daily,weekly,monthly
+    schedule: str # daily,weekly,monthly,weekly_or_monthly
     save_origin: str # YES,NO
     replace_tree: str
     obsolescence_period: str # NUMBER
@@ -36,8 +34,16 @@ class ParamScheme(Validations):
     date_regex: str = field(init=False)
 
     def __post_init__(self):
-        self.date_code = DT_CODES_AND_REGEX[self.date_format]["dt_code"]
-        self.date_regex = DT_CODES_AND_REGEX[self.date_format]["regex"]
+        date_format = self.date_format or None
+        self.date_code = DT_CODES_AND_REGEX[date_format]["dt_code"]
+        self.date_regex = DT_CODES_AND_REGEX[date_format]["regex"]
+        if self.schedule == "weekly_or_monthly":
+            if date.today().day in range(1, 6) or (
+                    date.today().day in range(1, 12) and date.today().month == 1
+            ):
+                self.schedule = "monthly"
+            else:
+                self.schedule = "weekly"
 
     @staticmethod
     def validate_source_folder(value, **_):

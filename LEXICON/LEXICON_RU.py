@@ -1,4 +1,7 @@
 LEXICON_RU = {
+    "start_copy": """Enter - начать копирование, 
+    или введите номера расписаний для пропуска 
+    (если их несколько, то вводите через пробел):""",
     "new_env_message": """Создан файл .env.\n Заполните его как указано в README.txt""",
     "new_env_file": """Создан файл .env.\n\n
     Заполните его с помощью текстового редактора 
@@ -8,19 +11,21 @@ LEXICON_RU = {
     COPY_FILES_OR_TREE_1=FILES - режим копирования файлов или папки целиком\n
     SCHEDULE_1=weekly - тип оформления копирования (once,daily,weekly,monthly).\n
     SAVE_ORIGIN_1=YES - сохранять ли оригинал (YES или NO).\n
+    REPLACE_TREE_1=YES - заменять ли папки в директории назначения.\n
     OBSOLESCENCE_PERIOD_1=7 - для ежедневного копирования указать период
         в днях, после которого файл считается устаревшим).\n
     SUBSTRING_1= - название файла должно будет содержать эту строку\n
     DATE_FORMAT_1=YYYYMMDD - формат даты. (Поддерживается: 20240816=YYYYMMDD,
         240816=YYMMDD, 2024_08_16=YYYY_MM_DD, 16_08_2024=DD_MM_YYYY)\n\n\n
 
-Пример для второй папке
+Пример для второй папке:
 
 SOURCE_FOLDER_2=C:\\test3\\ - путь к второй исходной папке.
 DESTINATION_FOLDER_2=C:\\test4\\ - путь к второй папке назначения.
 COPY_FILES_OR_TREE_2=FILES
 SCHEDULE_2=daily
 SAVE_ORIGIN_2=YES
+REPLACE_TREE_2=YES
 OBSOLESCENCE_PERIOD_2=7
 SUBSTRING_2=
 DATE_FORMAT_2=YYYYMMDD\n
@@ -40,10 +45,11 @@ DATE_FORMAT_2=YYYYMMDD\n
 NEW_ENV_FILE = """SOURCE_FOLDER_1=
 DESTINATION_FOLDER_1=
 COPY_FILES_OR_TREE_1=FILES
-SCHEDULE_1=weekly,monthly
+SCHEDULE_1=weekly
 SAVE_ORIGIN_1=YES
+REPLACE_TREE_1=YES
 OBSOLESCENCE_PERIOD_1=7
-SUBSTRING_2=
+SUBSTRING_1=
 DATE_FORMAT_1=YYYYMMDD
 
 SOURCE_FOLDER_2=
@@ -51,15 +57,21 @@ DESTINATION_FOLDER_2=
 COPY_FILES_OR_TREE_2=FILES
 SCHEDULE_2=daily
 SAVE_ORIGIN_2=YES
+REPLACE_TREE_2=YES
 OBSOLESCENCE_PERIOD_2=7
 SUBSTRING_2=
 DATE_FORMAT_2=YYYYMMDD
 """
 
-SUPPORTED_DATE_FORMATS = ("YYYYMMDD", "DDMMYYYY", "YYYY_MM_DD", "DD_MM_YYYY", "YYMMDD")
+SUPPORTED_DATE_FORMATS = ("YYYYMMDD", "YYYY_MM_DD", "DD_MM_YYYY", "YYMMDD")
 
-DT_CODES_AND_REGEX = {"YYYYMMDD": {"regex": r"(\d{8})", "dt_code": "%Y%m%d"},
-              "YYMMDD": {"regex": r"(\d{6})", "dt_code": "%y%m%d"},
-              "DD_MM_YYYY": {"regex": r"(\d\d_\d\d_\d{4})", "dt_code": "%d_%m_%Y"},
-              "YYYY_MM_DD": {"regex": r"(\d{4}_\d\d_\d\d)", "dt_code": "%Y_%m_%d"},
-              None: {"regex": "", "dt_code": ""}}
+DT_CODES_AND_REGEX = {
+    "YYYYMMDD": {"regex": r"(\d{8})", "dt_code": "%Y%m%d"},
+    "YYMMDD": {"regex": r"^(\d{6})\D|\D(\d{6})$", "dt_code": "%y%m%d"},
+    "DD_MM_YYYY": {"regex": r"(\d\d_\d\d_\d{4})", "dt_code": "%d_%m_%Y"},
+    "YYYY_MM_DD": {"regex": r"(\d{4}_\d\d_\d\d)", "dt_code": "%Y_%m_%d"},
+    None: {"regex": "", "dt_code": ""}
+}
+
+log_format = "[%(asctime)s.%(msecs)03d] %(levelname)6s:  %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"

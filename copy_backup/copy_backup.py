@@ -49,14 +49,13 @@ class CopyBackup:
         if self.mode == "FILES":
             self.copy_obj_all()
         elif self.mode == "TREE":
-
             self.copy_tree(rewrite=rewrite)
-            print(os.listdir(self.destination))
 
+
+    @timer
+    @log_start_finish
     def copy_obj_all(self, *, max_size=1000000):
-        """Цикл применения функции копирования
-        ко всем элементам начального списка файлов.
-        + указывается размер буфера"""
+        """Копирование файлов по списку"""
         for file in self.files:
             source = self.source + file
             destination = self.destination + file
@@ -77,23 +76,35 @@ class CopyBackup:
             logger2.error(f"Ошибка при копировании файлового объекта. Содержание:{e}",
                           exc_info=e)
 
+    @staticmethod
+    @timer
+    @log_start_finish
+    def copy_tree_element(source, destination):
+        """Копирование директории"""
+        try:
+            shutil.copytree(source, destination, dirs_exist_ok=True)
+        except Exception as e:
+            logger1.error(f"Ошибка при копировании директории. Содержание:{e}",
+                          exc_info=e)
+            logger2.error(f"Ошибка при копировании директории. Содержание:{e}",
+                          exc_info=e)
+
     @timer
     @log_start_finish
     def copy_tree(self, rewrite=True):
-        """Копирование директории."""
+        """Копирование директорий по списку."""
         try:
 
             for folder in self.files:
-                print(folder)
                 full_destination_path = self.destination + folder
                 if os.path.exists(full_destination_path) and rewrite:
                     shutil.rmtree(full_destination_path)
-                    sleep(0.1)
+                    # sleep(0.1)
                 elif os.path.exists(full_destination_path) and not rewrite:
                     raise OSError("Пользователь запретил удалять одноименную папку в назначении.")
 
                 full_source_path = self.source + folder
-                shutil.copytree(full_source_path, full_destination_path)
+                self.copy_tree_element(full_source_path, full_destination_path)
 
         except Exception as e:
             logger1.error(f"Ошибка при копировании директории. Содержание:{e}",
