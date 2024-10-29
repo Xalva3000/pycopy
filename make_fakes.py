@@ -7,16 +7,11 @@ dotenv.load_dotenv()
 
 # Создание и заполнение тестовых файлов c датами (для ручного тестирования)
 def make_fake_files():
-    # os.makedirs(r"C:\set1", exist_ok=True)
-    # os.makedirs(r"C:\set2", exist_ok=True)
-    # os.makedirs(r"C:\set3", exist_ok=True)
-    # os.makedirs(r"C:\set4", exist_ok=True)
 
     for k, v in dotenv.dotenv_values().items():
         if 'SOURCE_FOLDER' in k:
             os.makedirs(v, exist_ok=True)
             source = v
-
 
             today_ordinal = date.today().toordinal()
             month_before = today_ordinal - 30

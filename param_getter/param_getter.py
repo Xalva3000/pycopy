@@ -23,13 +23,13 @@ class Validations:
 class ParamScheme(Validations):
     source_folder: str
     destination_folder: str
-    copy_files_or_tree: str # FILES, TREE
-    schedule: str # daily,weekly,monthly,weekly_or_monthly
-    save_origin: str # YES,NO
+    copy_files_or_tree: str  # FILES, TREE
+    schedule: str  # daily,weekly,monthly,weekly_or_monthly,sync
+    save_origin: str  # YES,NO
     replace_tree: str
-    obsolescence_period: str # NUMBER
-    substring: str # SUBSTRING
-    date_format: str # YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
+    obsolescence_period: str  # NUMBER
+    substring: str  # SUBSTRING
+    date_format: str  # YYYYMMDD, DDMMYYYY, YYYY_MM_DD, DD_MM_YYYY, YYMMDD
     date_code: str = field(init=False)
     date_regex: str = field(init=False)
 
@@ -37,8 +37,9 @@ class ParamScheme(Validations):
         date_format = self.date_format or None
         self.date_code = DT_CODES_AND_REGEX[date_format]["dt_code"]
         self.date_regex = DT_CODES_AND_REGEX[date_format]["regex"]
+
         if self.schedule == "weekly_or_monthly":
-            if date.today().day in range(1, 6) or (
+            if date.today().day in range(1, 8) or (
                     date.today().day in range(1, 12) and date.today().month == 1
             ):
                 self.schedule = "monthly"
@@ -46,35 +47,28 @@ class ParamScheme(Validations):
                 self.schedule = "weekly"
 
     @staticmethod
-    def validate_source_folder(value, **_):
-        try:
-            assert len(os.listdir(value)) > 0, "Неверный путь к исходной директории, или она пуста."
-        except AssertionError as e:
-            logger1.error("Неверный путь к исходной директории, или она пуста.", exc_info=True)
-            logger2.error("Неверный путь к исходной директории, или она пуста.", exc_info=True)
-            raise ValueError
-        except FileNotFoundError:
-            logger1.error("Исходная директория не найдена.", exc_info=True)
-            logger2.error("Исходная директория не найдена.", exc_info=True)
+    def log(message: str, error=True):
+        if error:
+            logger1.error(message, exc_info=True)
+            logger2.error(message, exc_info=True)
         else:
-            logger1.error(f"Исходная директория принята. {value}")
-            logger2.error(f"Исходная директория принята. {value}")
+            logger1.info(message, exc_info=True)
+            logger2.info(message, exc_info=True)
+
+    @staticmethod
+    def validate_source_folder(value: str) -> str:
+        if not os.path.exists(value) or not os.listdir(value):
+            ParamScheme.log("Неверный путь к исходной директории, или она пуста.")
+            raise ValueError("Неверный путь к исходной директории, или она пуста.")
+        ParamScheme.log(f"Исходная директория принята. {value}")
         return value
 
     @staticmethod
-    def validate_destination_folder(value, **_):
-        try:
-            assert len(os.listdir(value)) >= 0, "Неверный путь к директории назначения."
-        except AssertionError as e:
-            logger1.error("Неверный путь к директории назначения.", exc_info=True)
-            logger2.error("Неверный путь к директории назначения.", exc_info=True)
-            raise ValueError
-        except FileNotFoundError:
-            logger1.error("Директория назначения не найдена.", exc_info=True)
-            logger2.error("Директория назначения не найдена.", exc_info=True)
-        else:
-            logger1.error(f"Директория назначения принята. {value}")
-            logger2.error(f"Директория назначения принята. {value}")
+    def validate_destination_folder(value: str) -> str:
+        if not os.path.exists(value):
+            ParamScheme.log("Неверный путь к директории назначения.")
+            raise ValueError("Неверный путь к директории назначения.")
+        ParamScheme.log(f"Директория назначения принята. {value}")
         return value
 
     @staticmethod
@@ -90,7 +84,7 @@ class ParamScheme(Validations):
     @staticmethod
     def validate_schedule(value, **_):
         try:
-            assert value in ["daily", "weekly", "monthly", "once"], "Неизвестное расписание. Должно быть once, daily,weekly или monthly."
+            assert value in ["daily", "weekly", "monthly", "once", "sync"], "Неизвестное расписание. Должно быть once, daily,weekly или monthly."
         except AssertionError as e:
             logger1.error("Неизвестное расписание. Должно быть once, daily,weekly или monthly.", exc_info=True)
             logger2.error("Неизвестное расписание. Должно быть once, daily,weekly или monthly.", exc_info=True)
@@ -149,7 +143,6 @@ class ParamScheme(Validations):
 
 
 
-
 class ParamGetter:
     def __init__(self, env_variables: OrderedDict[str, str]):
         self.vars = env_variables
@@ -164,11 +157,6 @@ class ParamGetter:
         if len(dct) != 9:
             flag = False
 
-        # for k, v in dct.items():
-        #     print(k,v)
-        #     if not k or not v:
-        #         flag = False
-
         if flag:
             return True
 
@@ -177,19 +165,15 @@ class ParamGetter:
     @log_start
     def get_param_groups(self):
         """Прием групп параметров из файла env"""
-        regex = r"^(.+)_(\d+)$"
+        regex = r"^(\d+)_(.+)$"
         param_groups = {}
 
         for var, value in self.vars.items():
             match = re.fullmatch(regex, var)
-            if match.group(2).isdigit():
-                id_num = int(match.group(2))
+            if match.group(1).isdigit():
+                id_num = int(match.group(1))
                 dct = param_groups.setdefault(id_num, {})
-                dct[match.group(1).lower()] = value
-
-        #
-        # for gr in param_groups.values():
-        #     self.check_group(gr)
+                dct[match.group(2).lower()] = value
 
         return param_groups
 

@@ -28,6 +28,9 @@ class PlaceManager:
         elif self.params.schedule == "once":
             self.once_folder = destination_folder + "once\\"
             self.destination = self.once_folder + date.today().isoformat() + "\\"
+        elif self.params.schedule == "sync" and self.params.copy_files_or_tree == "FILES":
+            self.sync_folder = self.params.source_folder
+            self.destination = destination_folder
 
     def create_if_not_exists(self):
         logger.info(f"Проверка пути {self.destination}")
@@ -69,6 +72,11 @@ class PlaceManager:
                     if folder_date <= brink_date:
                         logger.info(f"Удаление {self.monthly_folder + folder}")
                         shutil.rmtree(self.monthly_folder + folder)
+
+        # os.path.getmtime(file_path)
+        # from pathlib import Path
+        # file_path = Path('путь_к_вашему_файлу.txt')
+        # modification_time = file_path.stat().st_mtime
 
         executor = Executor(self.destination, self.params)
         executor.execute()
